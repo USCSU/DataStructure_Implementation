@@ -1,1 +1,118 @@
 
+package Google2015;
+
+import java.util.BitSet;
+
+/**
+ *
+ * //
+ * n is total numbers of input
+ *
+ * //hashFunction numbers
+ * k = (m/n * ln2)
+ *
+ *
+ * // m is bits of bloom filter
+ * m = - (n*lnp)  /  (ln2)^2
+ *
+ *
+ * //probability of false positive
+ * p = (1-e^(-k*n/m))^k;
+ *
+ */
+public class BloomFilter {
+    int k; //Hash number
+    int n; //element number
+    int m;// bits of BloomFilter
+    double p; // rate of False positive
+    int[] hashFunction;
+    BitSet bitSet;
+    int limit;
+    BloomFilter(int m, int k, double p){
+        this.m = m;
+        this.k = k;
+        this.p = p;
+        bitSet = new BitSet(m);
+        limit = 100; //limit here is simply to define seed's range is from 0 - 100;
+        hashFunction = getSeed();
+    }
+    BloomFilter(int n, double p){
+        this.n = n;
+        this.p = p;
+        m = (int)(-(n*Math.log(p)/(Math.log(2)*Math.log(2))));
+        bitSet = new BitSet(m);
+        k = (int)(m/n*Math.log(2));
+        limit = 100;
+        hashFunction = getSeed();
+    }
+
+    //Get prime number with "sieve of Eratosthenes" Alg.
+    //time complexity :O(nloglogn) Space: O(n)
+    private  BitSet countPrimes(int limit){
+        BitSet set = new BitSet(limit);
+        set.set(0,false);
+        set.set(1,false);
+        set.set(2,limit,true);
+        for(int i = 0;i*i<limit;i++){
+            if(set.get(i)){
+                for(int j = i*i;j<limit;j+=i){
+                    set.clear(j);
+                }
+            }
+        }
+        return set;
+    }
+    private  int[] getSeed(){ //HashNumber is k
+        int[] ret   = new int[k];
+        BitSet primes = countPrimes(limit);
+        int size = k ;
+        for(int i = 2;i<k&&size>=0;i++){
+            if(primes.get(i)){
+                ret[--size] = i;
+            }
+        }
+        return ret;
+    }
+    private  int hashcode(String element, int seed){
+        if(element == null || element.length() ==0) return 0;
+        int ret = 0;
+        for(int i =0;i<element.length();i++){
+            ret = ret*seed + element.charAt(i);
+        }
+        return (limit-1)&ret;
+
+    }
+    public void add(String element){
+        if(element == null) return;
+        for(int seed:hashFunction){
+            bitSet.set(hashcode(element,seed));
+        }
+    }
+    public boolean contain(String element){
+        boolean ret = true;
+        for(int seed:hashFunction){
+            ret&=bitSet.get(hashcode(element,seed));
+        }
+        return ret;
+    }
+
+    public static void main(String[] args){
+
+       BloomFilter bloomFilter = new BloomFilter(100,8,0.001);
+       bloomFilter.add("suwei@gmail.com");
+       bloomFilter.add("weisu@gmail.com");
+       bloomFilter.add("huansu@hotmail.com");
+       bloomFilter.add("k@yahoo.com");
+       bloomFilter.add("littleboy@linkedin.com");
+       System.out.println(bloomFilter.contain("suwei@gmail.com")); // true
+       System.out.println(bloomFilter.contain("suwei@gmail.cm")); //false
+       System.out.println(bloomFilter.contain("huansu@gmail.cm")); //false
+       System.out.println(bloomFilter.contain("huansu@yahoo.cm")); //false
+       System.out.println(bloomFilter.contain("huansu@hotmail.com"));//true
+       System.out.println(bloomFilter.contain("k@yahoo.com"));//true
+        System.out.println(bloomFilter.contain("littleboy@linkedin.com")); //true
+
+
+    }
+
+}
