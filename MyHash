@@ -1,107 +1,136 @@
-
+package Google2015.Data_Structure;
 
 import java.util.LinkedList;
+
+/**
+ * Created by Trace_route on 3/7/15.
+ */
 public class MyHash<K,V> {
-    LinkedList<Pair<K,V>>[] items;
+    LinkedList<Entry<K,V>>[] items;
     int capacity;
     int size;
-    float loadFac;
+    float load_Factor;
     MyHash(){
-        capacity = 1<<4;
-        size = 0;
-        loadFac = 0.75f;
-    }
-    MyHash(int capacity, int loadFac){
-        if(capacity <=0 || loadFac <=0 || Float.isNaN(loadFac)) throw new IllegalArgumentException("Wrong argument");
-        if(capacity > 1<<30) this.capacity = 1<<30;
-        else if((capacity&1) ==1){
-            this.capacity = 1;
-            while (this.capacity < capacity){
-                this.capacity <<=1;
-            }
-        }
-        else this.capacity = capacity;
-        this.loadFac = loadFac;
+        load_Factor=0.75f;
+        capacity = 1<<1;
         items = new LinkedList[capacity];
     }
-    public V get(K key){
-        int hash = hashcode(key);
-        if(items[hash]==null) return null;
-        else{
-            for(int i =0;i<items[hash].size();i++){
-                if(key.equals(items[hash].get(i).getKey())){
-                    return items[hash].get(i).getValue();
+    MyHash(int capacity, float load_Factor){
+        if(capacity<1 || load_Factor<0 || Float.isNaN(load_Factor)) throw new IllegalArgumentException("wrong parameter");
+        if(capacity > 1<<30) this.capacity = 1<<30;
+        else if((capacity & 1) ==1){
+            this.capacity = 1;
+            while(this.capacity < capacity){
+                this.capacity <<= 1;
+            }
+        }
+        else
+            this.capacity = capacity;
+        this.load_Factor = load_Factor;
+        items = new LinkedList[this.capacity];
+    }
+    private boolean isOverLoad(){
+        return size/capacity>load_Factor;
+    }
+    private int hashCode(K key){
+        return key.toString().length()%capacity;
+    }
+    public void put(K key, V value){
+        if(isOverLoad()) resize();
+        Entry<K,V> item = new Entry<K, V>(key,value);
+        int hash = hashCode(key);
+        if(items[hash] == null){
+            items[hash] = new LinkedList<Entry<K, V>>();
+        }else{
+            LinkedList<Entry<K,V>> list = items[hash];
+            for(int i =0;i<list.size();i++){
+                if(item.equals(list.get(i))){
+                    list.remove(i);
+                    size--;
                 }
-
+            }
+        }
+        items[hash].addFirst(item);
+        size++;
+    }
+    public V get(K key){
+        int hash = hashCode(key);
+        if(items[hash] == null) return null;
+        else{
+            LinkedList<Entry<K,V>> list = items[hash];
+            for(Entry<K,V> entry:list){
+                if(key.equals(entry.getKey()))
+                    return entry.getValue();
             }
         }
         return null;
     }
-    public void put(K key, V value){
-        if(hasOverLoad()) resize();
-        Pair<K,V> entry = new Pair<K, V>();
-        int hash = hashcode(key);
-        if(items[hash] == null){
-            items[hash] = new LinkedList<Pair<K, V>>();
-        }else{
-            for(int i =0;i<items[hash].size();i++){
-                if(key.equals(items[hash].get(i).getKey())) {
-                    items[hash].remove(i);
+    public void remove(K key){
+        int hash = hashCode(key);
+        if(items[hash] == null) return;
+        else{
+            LinkedList<Entry<K,V>> list = items[hash];
+            for(int i =0;i<list.size();i++){
+                if(key.equals(list.get(i).getKey())){
+                    list.remove(i);
                     size--;
-                    break;
+                    return;
                 }
-
             }
         }
-        items[hash].addFirst(entry);
-        size++;
-    }
-    public int hashcode(K key){
-        return key.toString().length()%capacity;
-    }
-    public boolean hasOverLoad(){
-        return (double)size/(double)capacity >= loadFac;
     }
     public void resize(){
         capacity*=2;
-        LinkedList<Pair<K,V>>[] newArray = new LinkedList[capacity];
-        for(LinkedList<Pair<K,V>> list:items){
-            if(list == null) continue;
-            for(Pair<K,V> pair:list){
-                int hash = hashcode(pair.getKey());
-                if(newArray[hash] == null){
-                    newArray[hash] = new LinkedList<Pair<K, V>>();
+        LinkedList<Entry<K,V>>[] newItems = new LinkedList[capacity];
+        for(LinkedList<Entry<K,V>> item:items){
+            if(item == null) continue;
+            for(Entry<K,V> entry:item){
+                int hash = hashCode(entry.getKey());
+                if(newItems[hash] == null){
+                    newItems[hash] = new LinkedList<Entry<K, V>>();
                 }
-                newArray[hash].addFirst(pair);
+                newItems[hash].addFirst(entry);
             }
         }
-        items = newArray;
+        items = newItems;
+
     }
-    public void remove(K key){
-        int hash = hashcode(key);
-        if(items[hash]==null) return ;
-        else{
-            for(int i =0;i<items[hash].size();i++){
-                if(key.equals(items[hash].get(i).getKey())){
-                    items[hash].remove(i);
-                    size--;
-                    break;
-                }
-            }
-        }
-    }
-    private class Pair<K,V>{
+    class Entry<K,V>{
         private K key;
         private V value;
-        public boolean equal(Pair p){
-            return this.key.equals(p.getKey()) && this.value.equals(p.getValue());
+        public Entry(K key, V value){
+            this.value = value;
+            this.key = key;
+        }
+        public boolean equals(Entry<K,V> entry){
+            return key.equals(entry.key);
         }
         public K getKey(){
-            return this.key;
+            return key;
         }
         public V getValue(){
-            return this.value;
+            return value;
         }
     }
-}
+    public static void main(String[] args){
+        MyHash<String, Integer> hash = new MyHash<String, Integer>();
+        hash.put("abc",2);
+        hash.put("abd",3);
+        hash.put("oi",4);
+        hash.put("sl",5);
+        hash.put("nv",6);
+        hash.put("ny",7);
+        hash.put("ca",8);
+        System.out.println(hash.get("abc"));
+        System.out.println(hash.get("abd"));
+        System.out.println(hash.get("sl"));
+        System.out.println(hash.get("ca"));
+        hash.remove("ny");
+        System.out.println(hash.get("jkd"));
+        System.out.println(hash.get("oi"));
+        System.out.println(hash.get("nv"));
+        System.out.println(hash.get("ny"));
+        System.out.println(hash.get("ca"));
 
+    }
+}
