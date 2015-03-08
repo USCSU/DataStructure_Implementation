@@ -1,76 +1,104 @@
-package Google2015;
+package Google2015.Data_Structure;
 
 import java.util.HashMap;
 
 
-public class LRU {
-    HashMap<Integer,DoubleLinkedNode> map;
+public class LRU<K,V> {
+    HashMap<K,circularLinkedNode> map;
+    circularLinkedNode head;
+    circularLinkedNode tail;
     int size;
     int capacity;
-    DoubleLinkedNode head;
-    DoubleLinkedNode tail;
-    public void put(int key, int value){
+    public LRU(){
+        map = new HashMap<K, circularLinkedNode>();
+        capacity = 1<< 4;
+    }
+    public LRU(int capacity){
+        this.capacity = capacity;
+        map = new HashMap<K, circularLinkedNode>();
+    }
+    private boolean isOverLoad(){
+        return size == capacity;
+    }
+    public void put(K key, V value){
         if(map.containsKey(key)){
-            map.get(key).value = value;
-            remove(map.get(key));
-            setHead(map.get(key));
+            circularLinkedNode node = map.get(key);
+            node.setVal(value);
+            remove(node);
+            setHead(node);
         }else{
-           DoubleLinkedNode node = new DoubleLinkedNode(key,value);
-           if(size<capacity){
-               size++;
-           }else{
-               remove(tail);
-               tail = tail.pre;
-               if(tail!=null) tail.next = null;
-           }
-               setHead(node);
-               map.put(key,node);
+            circularLinkedNode node = new circularLinkedNode(key,value);
+            if(isOverLoad()){
+                remove(tail);
+
+            }else{
+                size++;
+            }
+            map.put(key,node);
+            setHead(node);
+
         }
     }
-    public int get(int key){
-        if(!map.containsKey(key)) return -1;
-        DoubleLinkedNode cur = map.get(key);
-        remove(cur);
-        setHead(cur);
-        return cur.value;
+    public V get(K key){
+       if(!map.containsKey(key)) return null;
+       circularLinkedNode node = map.get(key);
+       remove(node);
+       setHead(node);
+       return (V)node.getVal();
     }
-    public void remove(DoubleLinkedNode node){
-        DoubleLinkedNode pre = node.pre;
-        DoubleLinkedNode next = node.next;
-        if(pre!=null)
-            pre.next = next;
-        else head = next;
-
-        if(next !=null)
-            next.pre = pre;
-        else tail = pre;
-
-    }
-    public void setHead(DoubleLinkedNode node){
+    public void setHead(circularLinkedNode node){
         node.next = head;
         node.pre = null;
-        if(head!=null)
+        if(head !=null)
             head.pre = node;
-        head= node;
-        if(tail == null) tail = node;
+        head = node;
+        if(tail == null)
+            tail = node;
+
+    }
+    public void remove(circularLinkedNode node){
+        circularLinkedNode pre = node.pre;
+        circularLinkedNode next = node.next;
+        if(pre!=null)
+            pre.next = next;
+        else
+            head = next;
+
+        if(next!=null)
+            next.pre = pre;
+        else
+            tail = pre;
     }
 
-
-    private class DoubleLinkedNode{
-        private int key;
-        private int value;
-        DoubleLinkedNode pre;
-        DoubleLinkedNode next;
-        DoubleLinkedNode(int key, int value){
+    class circularLinkedNode<K,V>{
+        private circularLinkedNode pre;
+        private circularLinkedNode next;
+        private V val;
+        private K key;
+        circularLinkedNode(K key, V value){
             this.key = key;
-            this.value = value;
+            this.val = value;
         }
-        public int getKey(){
-            return this.key;
+        public void setVal(V val){
+            this.val = val;
         }
-        public int getValue(){
-            return this.value;
+        public void setKey(K key){
+            this.key = key;
         }
+        public K getKey(){
+            return (K)key;
+        }
+        public V getVal(){
+            return (V)val;
+        }
+    }
+    public static void main(String[] args){
+        LRU<String, Integer> lru = new LRU<String, Integer>(2);
+        lru.put("abc",1);
+        lru.put("bac",2);
+        lru.put("okl",3);
+        lru.put("poi",4);
+        System.out.println(lru.get("abc"));
 
     }
 }
