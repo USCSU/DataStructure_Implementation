@@ -1,0 +1,107 @@
+
+
+import java.util.LinkedList;
+public class MyHash<K,V> {
+    LinkedList<Pair<K,V>>[] items;
+    int capacity;
+    int size;
+    float loadFac;
+    MyHash(){
+        capacity = 1<<4;
+        size = 0;
+        loadFac = 0.75f;
+    }
+    MyHash(int capacity, int loadFac){
+        if(capacity <=0 || loadFac <=0 || Float.isNaN(loadFac)) throw new IllegalArgumentException("Wrong argument");
+        if(capacity > 1<<30) this.capacity = 1<<30;
+        else if((capacity&1) ==1){
+            this.capacity = 1;
+            while (this.capacity < capacity){
+                this.capacity <<=1;
+            }
+        }
+        else this.capacity = capacity;
+        this.loadFac = loadFac;
+        items = new LinkedList[capacity];
+    }
+    public V get(K key){
+        int hash = hashcode(key);
+        if(items[hash]==null) return null;
+        else{
+            for(int i =0;i<items[hash].size();i++){
+                if(key.equals(items[hash].get(i).getKey())){
+                    return items[hash].get(i).getValue();
+                }
+
+            }
+        }
+        return null;
+    }
+    public void put(K key, V value){
+        if(hasOverLoad()) resize();
+        Pair<K,V> entry = new Pair<K, V>();
+        int hash = hashcode(key);
+        if(items[hash] == null){
+            items[hash] = new LinkedList<Pair<K, V>>();
+        }else{
+            for(int i =0;i<items[hash].size();i++){
+                if(key.equals(items[hash].get(i).getKey())) {
+                    items[hash].remove(i);
+                    size--;
+                    break;
+                }
+
+            }
+        }
+        items[hash].addFirst(entry);
+        size++;
+    }
+    public int hashcode(K key){
+        return key.toString().length()%capacity;
+    }
+    public boolean hasOverLoad(){
+        return (double)size/(double)capacity >= loadFac;
+    }
+    public void resize(){
+        capacity*=2;
+        LinkedList<Pair<K,V>>[] newArray = new LinkedList[capacity];
+        for(LinkedList<Pair<K,V>> list:items){
+            if(list == null) continue;
+            for(Pair<K,V> pair:list){
+                int hash = hashcode(pair.getKey());
+                if(newArray[hash] == null){
+                    newArray[hash] = new LinkedList<Pair<K, V>>();
+                }
+                newArray[hash].addFirst(pair);
+            }
+        }
+        items = newArray;
+    }
+    public void remove(K key){
+        int hash = hashcode(key);
+        if(items[hash]==null) return ;
+        else{
+            for(int i =0;i<items[hash].size();i++){
+                if(key.equals(items[hash].get(i).getKey())){
+                    items[hash].remove(i);
+                    size--;
+                    break;
+                }
+            }
+        }
+    }
+    private class Pair<K,V>{
+        private K key;
+        private V value;
+        public boolean equal(Pair p){
+            return this.key.equals(p.getKey()) && this.value.equals(p.getValue());
+        }
+        public K getKey(){
+            return this.key;
+        }
+        public V getValue(){
+            return this.value;
+        }
+    }
+}
+
